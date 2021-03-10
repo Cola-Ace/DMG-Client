@@ -166,7 +166,7 @@ void FastJoin() {
     cout << "输入你想加入服务器的序号: ";
     int input;
     cin >> input;
-    if (input > count) {
+    if (input > count || input == 0) {
         MainPage();
     }
     for (int i = 1; i <= count; i++) {

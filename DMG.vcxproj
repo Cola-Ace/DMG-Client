@@ -24,7 +24,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="http.h" />
-    <ClInclude Include="post.h" />
+    <ClInclude Include="resource.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="DMG.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="favicon.ico" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
