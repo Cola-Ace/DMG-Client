@@ -1,22 +1,20 @@
-#define _CRT_SECURE_NO_WARNINGS
-
+/*
 #define BUILDING_LIBCURL
 #pragma comment(lib, "ws2_32.lib")
 #pragma comment(lib, "wldap32.lib")
 #pragma comment(lib, "libcurl.lib")
-
+*/
 #include <iostream>
 #include <string>
 #include <ctime>
 #include <stdio.h>
 #include <stdlib.h>
-#include "post.h"
-
+#include "http.h"
+using namespace std;
+/*
 #define CURL_GLOBAL_SSL (1<<0)
 #define CURL_GLOBAL_WIN32 (1<<1)
 #define CURL_GLOBAL_ALL (CURL_GLOBAL_SSL|CURL_GLOBAL_WIN32)
-
-using namespace std;
 
 //====== Curl Start ======
 size_t receive_data(void* contents, size_t size, size_t nmemb, void* stream) {
@@ -34,7 +32,7 @@ int download_file(const char* url, const char outfilename[FILENAME_MAX]) {
     CURL* curl;
     FILE* fp;
     CURLcode res;
-    /*   调用curl_global_init()初始化libcurl  */
+    //   调用curl_global_init()初始化libcurl  
     res = curl_global_init(CURL_GLOBAL_ALL);
     if (CURLE_OK != res)
     {
@@ -42,12 +40,12 @@ int download_file(const char* url, const char outfilename[FILENAME_MAX]) {
         curl_global_cleanup();
         return -1;
     }
-    /*  调用curl_easy_init()函数得到 easy interface型指针  */
+    //  调用curl_easy_init()函数得到 easy interface型指针  
     curl = curl_easy_init();
     if (curl) {
         fp = fopen(outfilename, "wb");
 
-        /*  调用curl_easy_setopt()设置传输选项 */
+        /*  调用curl_easy_setopt()设置传输选项 
         res = curl_easy_setopt(curl, CURLOPT_URL, url);
         if (res != CURLE_OK)
         {
@@ -55,14 +53,14 @@ int download_file(const char* url, const char outfilename[FILENAME_MAX]) {
             curl_easy_cleanup(curl);
             return -1;
         }
-        /*  根据curl_easy_setopt()设置的传输选项，实现回调函数以完成用户特定任务  */
+        /*  根据curl_easy_setopt()设置的传输选项，实现回调函数以完成用户特定任务  
         res = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writedata2file);
         if (res != CURLE_OK) {
             fclose(fp);
             curl_easy_cleanup(curl);
             return -1;
         }
-        /*  根据curl_easy_setopt()设置的传输选项，实现回调函数以完成用户特定任务  */
+        /*  根据curl_easy_setopt()设置的传输选项，实现回调函数以完成用户特定任务  
         res = curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
         if (res != CURLE_OK)
         {
@@ -74,14 +72,14 @@ int download_file(const char* url, const char outfilename[FILENAME_MAX]) {
         res = curl_easy_perform(curl);
         // 调用curl_easy_perform()函数完成传输任务
         fclose(fp);
-        /* Check for errors */
+        /* Check for errors 
         if (res != CURLE_OK) {
             fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
             curl_easy_cleanup(curl);
             return -1;
         }
 
-        /* always cleanup */
+        /* always cleanup 
         curl_easy_cleanup(curl);
         // 调用curl_easy_cleanup()释放内存
 
@@ -148,7 +146,7 @@ CURLcode HttpPost(const std::string& strUrl, std::string szJson, std::string& st
     return res;
 }
 //====== Curl End ======
-
+*/
 string UTF8ToGBK(const char* src_str)
 {
     int len = MultiByteToWideChar(CP_UTF8, 0, src_str, -1, NULL, 0);
@@ -178,14 +176,71 @@ static std::string format(const std::string& format, Args ... args)
     return std::string(buf.get(), buf.get() + size_buf - 1);
 }
 
+//==============
+//== Function ==
+//==============
+
 void Delay(int);
 void MainPage();
 void PrintLogo();
 void FastJoin();
-void JoinGame(int);
+void JoinGame(string, int);
+
+//Get Server Info
+string GetServerInfo(int);
+string GetHostName(string);
+string GetMap(string);
+string GetIP(string);
+int GetPort(string);
+int GetCount(string);
+int GetPlayers(string);
+int GetMaxPlayers(string);
 
 int main() {
     MainPage();
+}
+
+//Get Server Info
+string GetServerInfo(int sid) {
+    string response, url;
+    url = format("http://api.dmgclub.cn/server.php?sid=%i", sid);
+    http::HttpGet(url, response, 10);
+    const char* temp = new char[response.length() + 1];
+    temp = response.data();
+    return UTF8ToGBK(temp);
+}
+
+string GetHostName(string info) {
+    string response, url;
+    url = format("http://api.dmgclub.cn/info.php?ip=%s&port=%s&info=hostname", ip, port);
+    http::HttpGet(url, response, 10);
+    const char* temp = new char[response.length() + 1];
+    temp = response.data();
+    return UTF8ToGBK(temp);
+}
+
+string GetMap(string info) {
+
+}
+
+string GetIP(string info){
+    
+}
+
+int GetPort(string info) {
+
+}
+
+int GetCount(string info) {
+
+}
+
+int GetPlayers(string info) {
+
+}
+
+int GetMaxPlayers(string info) {
+
 }
 
 void MainPage() {
@@ -211,30 +266,31 @@ void FastJoin() {
 	system("cls");
 	PrintLogo();
     string response;
-    HttpGet("http://api.dmgclub.cn/server.php?method=server_count", response, 10);
+    http::HttpGet("http://api.dmgclub.cn/server.php?method=server_count", response, 10);
     int count = atoi(response.c_str());
     cout << "当前服务器数量: " << count << endl;
     response = "";
     string hostname, url, ip, port, map, maxplayers, players;
     for (int i = 1; i <= count; i++) {
         url = format("http://api.dmgclub.cn/server.php?method=server_ip&sid=%i", i);
-        HttpGet(url, ip, 10);
+        http::HttpGet(url, ip, 10);
         url = format("http://api.dmgclub.cn/server.php?method=server_port&sid=%i", i);
-        HttpGet(url, port, 10);
+        http::HttpGet(url, port, 10);
         url = format("http://api.dmgclub.cn/info.php?ip=%s&port=%s&info=hostname", ip, port);
-        HttpGet(url, response, 10);
+        http::HttpGet(url, response, 10);
         const char* temp = new char[response.length() + 1];
         temp = response.data();
         hostname = UTF8ToGBK(temp);
         url = format("http://api.dmgclub.cn/info.php?ip=%s&port=%s&info=map", ip, port);
-        HttpGet(url, map, 10);
+        http::HttpGet(url, map, 10);
         url = format("http://api.dmgclub.cn/info.php?ip=%s&port=%s&info=players", ip, port);
-        HttpGet(url, players, 10);
+        http::HttpGet(url, players, 10);
         url = format("http://api.dmgclub.cn/info.php?ip=%s&port=%s&info=maxplayers", ip, port);
-        HttpGet(url, maxplayers, 10);
+        http::HttpGet(url, maxplayers, 10);
         cout << i << ") " << hostname << " " << players << "/" << maxplayers << " | 地图: " << map << endl;
         response = hostname = url = ip = port = map = maxplayers = players = "";
         delete []temp;
+        Delay(100);
     }
     cout << "0) 返回主界面" << endl;
     cout << "输入你想加入服务器的序号: ";
@@ -252,14 +308,10 @@ void FastJoin() {
     MainPage();
 }
 
-void JoinGame(int sid) {
-    string url, ip, port, response;
-    url = format("http://api.dmgclub.cn/server.php?method=server_ip&sid=%i", sid);
-    HttpGet(url, ip, 10);
-    url = format("http://api.dmgclub.cn/server.php?method=server_port&sid=%i", sid);
-    HttpGet(url, port, 10);
-    url = format("steam://connect/%s:%s", ip, port);
-    HttpGet(url, response, 10);
+void JoinGame(string ip, int port) {
+    string url, response;
+    url = format("steam://connect/%s:%i", ip, port);
+    http::HttpGet(url, response, 10);
     return;
 }
 
