@@ -12,11 +12,13 @@
 using namespace std;
 using namespace rapidjson;
 
+//Is Isset File
 bool isFileExists_ifstream(string& name) {
     ifstream f(name.c_str());
     return f.good();
 }
 
+//UTF8 To GBK
 string UTF8ToGBK(const char* src_str)
 {
     int len = MultiByteToWideChar(CP_UTF8, 0, src_str, -1, NULL, 0);
@@ -33,6 +35,7 @@ string UTF8ToGBK(const char* src_str)
     return strTemp;
 }
 
+//Format String
 template<typename ... Args>
 static std::string format(const std::string& format, Args ... args)
 {
@@ -45,6 +48,28 @@ static std::string format(const std::string& format, Args ... args)
     std::snprintf(buf.get(), size_buf, format.c_str(), args ...);
     return std::string(buf.get(), buf.get() + size_buf - 1);
 }
+
+//Read Local File
+string readfile(const char* filename) {
+    FILE* fp;
+    fopen_s(&fp, filename, "rb");
+    if (!fp) {
+        printf("open failed! file: %s", filename);
+        return "";
+    }
+
+    char* buf = new char[1024 * 16];
+    int n = fread(buf, 1, 1024 * 16, fp);
+    fclose(fp);
+
+    string result;
+    if (n >= 0) {
+        result.append(buf, 0, n);
+    }
+    delete[]buf;
+    return result;
+}
+
 
 //==============
 //== Function ==
@@ -142,6 +167,11 @@ void MainPage() {
 	system("cls");
 	PrintLogo();
 	cout << "欢迎使用DMG社区启动器！" << endl;
+    string data = readfile("test.json");
+    Document document;
+    const char* temp = data.data();
+    document.Parse(temp);
+    cout << "Status: " << document["status"].GetString() << endl;
 	cout << "1) 快速加入服务器" << endl;
 	cout << "0) 退出" << endl;
 	cout << "输入你的选择: ";
