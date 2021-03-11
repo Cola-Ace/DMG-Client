@@ -1,13 +1,21 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include <iostream>
 #include <string>
 #include <ctime>
 #include <stdio.h>
 #include <stdlib.h>
+#include <fstream>
+#include <sys/stat.h>
 #include "http.h"
 #include "rapidjson/document.h"
 
 using namespace std;
 using namespace rapidjson;
+
+bool isFileExists_ifstream(string& name) {
+    ifstream f(name.c_str());
+    return f.good();
+}
 
 string UTF8ToGBK(const char* src_str)
 {
