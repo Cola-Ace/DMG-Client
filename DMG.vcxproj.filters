@@ -18,25 +18,49 @@
     <ClCompile Include="main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="http.cpp">
+    <ClCompile Include="include\base64.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="include\dmg.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="include\http.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="include\mysql.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="http.h">
+    <ClInclude Include="include\base64.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="resource.h">
+    <ClInclude Include="include\dmg.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\http.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\resource.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mysqlmgr.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mysql.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\md5.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="DMG.rc">
+    <ResourceCompile Include="include\image\DMG.rc">
       <Filter>资源文件</Filter>
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="favicon.ico">
+    <Image Include="include\image\favicon.ico">
       <Filter>资源文件</Filter>
     </Image>
   </ItemGroup>

@@ -6,11 +6,21 @@
 #include <stdlib.h>
 #include <fstream>
 #include <sys/stat.h>
-#include "http.h"
-#include "rapidjson/document.h"
+#include <conio.h>
+#include "include/dmg.h"
+#include "include/base64.h"
+#include "include/md5.h"
+#include "include/rapidjson/document.h"
+#include "include/rapidjson/stringbuffer.h"
+#include "include/rapidjson/writer.h"
 
 using namespace std;
 using namespace rapidjson;
+using namespace md5;
+
+bool isLogin = false;
+bool isVIP = false;
+int userid = 0;
 
 //Is Isset File
 bool isFileExists_ifstream(string& name) {
@@ -18,39 +28,8 @@ bool isFileExists_ifstream(string& name) {
     return f.good();
 }
 
-//UTF8 To GBK
-string UTF8ToGBK(const char* src_str)
-{
-    int len = MultiByteToWideChar(CP_UTF8, 0, src_str, -1, NULL, 0);
-    wchar_t* wszGBK = new wchar_t[len + 1];
-    memset(wszGBK, 0, len * 2 + 2);
-    MultiByteToWideChar(CP_UTF8, 0, src_str, -1, wszGBK, len);
-    len = WideCharToMultiByte(CP_ACP, 0, wszGBK, -1, NULL, 0, NULL, NULL);
-    char* szGBK = new char[len + 1];
-    memset(szGBK, 0, len + 1);
-    WideCharToMultiByte(CP_ACP, 0, wszGBK, -1, szGBK, len, NULL, NULL);
-    string strTemp(szGBK);
-    if (wszGBK) delete[] wszGBK;
-    if (szGBK) delete[] szGBK;
-    return strTemp;
-}
-
-//Format String
-template<typename ... Args>
-static std::string format(const std::string& format, Args ... args)
-{
-    auto size_buf = std::snprintf(nullptr, 0, format.c_str(), args ...) + 1;
-    std::unique_ptr<char[]> buf(new(std::nothrow) char[size_buf]);
-
-    if (!buf)
-        return std::string("");
-
-    std::snprintf(buf.get(), size_buf, format.c_str(), args ...);
-    return std::string(buf.get(), buf.get() + size_buf - 1);
-}
-
 //Read Local File
-string readfile(const char* filename) {
+string readFile(const char* filename) {
     FILE* fp;
     fopen_s(&fp, filename, "rb");
     if (!fp) {
@@ -59,7 +38,7 @@ string readfile(const char* filename) {
     }
 
     char* buf = new char[1024 * 16];
-    int n = fread(buf, 1, 1024 * 16, fp);
+    size_t n = fread(buf, 1, 1024 * 16, fp);
     fclose(fp);
 
     string result;
@@ -75,130 +54,218 @@ string readfile(const char* filename) {
 //== Function ==
 //==============
 
-void Delay(int);
 void MainPage();
-void PrintLogo();
 void FastJoin();
+void Login();
+void VIPCenter();
+void ChangePass();
+void ExchangeKey();
 void JoinGame(int);
 
-//Get Server Info
-string GetServerInfo(int);
-string GetHostName(string);
-string GetMap(string);
-string GetIP(string);
-int GetPort(string);
-int GetCount(string);
-int GetPlayers(string);
-int GetMaxPlayers(string);
+//Get Client Info
+bool IsValidUser(string, string);
 
 int main() {
+    isLogin = false;
+    userid = 0;
+    isVIP = false;
     MainPage();
 }
 
-//Get Server Info
-string GetServerInfo(int sid) {
-    string response, url;
-    url = format("http://api.dmgclub.cn/server.php?sid=%i", sid);
-    http::HttpGet(url, response, 10);
-    const char* temp = new char[response.length() + 1];
-    temp = response.data();
-    return UTF8ToGBK(temp);
-}
-
-string GetHostName(string info) {
-    Document document;
-    const char* temp = info.data();
-    document.Parse(temp);
-    const char* hostname = document["HostName"].GetString();
-    return UTF8ToGBK(hostname);
-}
-
-string GetMap(string info) {
-    Document document;
-    const char* temp = info.data();
-    document.Parse(temp);
-    const char* map = document["Map"].GetString();
-    string temp1 = map;
-    return temp1;
-}
-
-string GetIP(string info){
-    Document document;
-    const char* temp = info.data();
-    document.Parse(temp);
-    const char* IP = document["IP"].GetString();
-    string temp1 = IP;
-    return temp1;
-}
-
-int GetPort(string info) {
-    Document document;
-    const char* temp = info.data();
-    document.Parse(temp);
-    const char* map = document["Port"].GetString();
-    string temp1 = map;
-    return atoi(temp1.c_str());
-}
-
-int GetCount(string info) {
-    Document document;
-    const char* temp = info.data();
-    document.Parse(temp);
-    const char* count = document["Count"].GetString();
-    string temp1 = count;
-    return atoi(temp1.c_str());
-}
-
-int GetPlayers(string info) {
-    Document document;
-    const char* temp = info.data();
-    document.Parse(temp);
-    return document["Players"].GetInt();
-}
-
-int GetMaxPlayers(string info) {
-    Document document;
-    const char* temp = info.data();
-    document.Parse(temp);
-    return document["MaxPlayers"].GetInt();
+bool IsValidUser(string user, string pass) {
+    return true;
 }
 
 void MainPage() {
-	system("cls");
-	PrintLogo();
+	DMG::PrintLogo();
+    if (isLogin) {
+        cout << "欢迎您, " << DMG::GetNickName(userid) << endl;
+    }
 	cout << "欢迎使用DMG社区启动器！" << endl;
-    string data = readfile("test.json");
-    Document document;
-    const char* temp = data.data();
-    document.Parse(temp);
-    cout << "Status: " << document["status"].GetString() << endl;
 	cout << "1) 快速加入服务器" << endl;
+    if (isLogin) {
+        cout << "2) 退出登录" << endl;
+        cout << "3) 用户中心" << endl;
+    }
+    else {
+        cout << "2) 登录" << endl;
+    }
 	cout << "0) 退出" << endl;
 	cout << "输入你的选择: ";
 	int input;
 	cin >> input;
-	switch (input) {
-	case 1:
-		FastJoin();
-		break;
-	default:
-		break;
-	}
+    switch (input) {
+    case 1:
+        FastJoin();
+        break;
+    case 2:
+        Login();
+        break;
+    case 3:
+        if (isLogin) {
+            VIPCenter();
+        }
+        break;
+    }
+}
+
+void VIPCenter() {
+    DMG::PrintLogo();
+    string response, url, status;
+    string keys[64], values[64];
+    keys[0] = "uid";
+    values[0] = to_string(userid);
+    http::Post("http://api.dmgclub.cn/vip.php", DMG::CreateJSON(keys, values, 1), response, 10);
+    Document document;
+    document.Parse(response.data());
+    status = document["Status"].GetString();
+    if (status != "Success") {
+        cout << "获取VIP数据失败!" << endl;
+        isVIP = false;
+    }
+    else {
+        isVIP = true;
+    }
+    time_t time = document["TimeStamp"].GetInt();
+    string year;
+    switch (document["Year"].GetInt()) {
+    case 0:
+        year = "否";
+    case 1:
+        year = "是";
+    }
+    cout << "欢迎您, " << DMG::GetNickName(userid) << endl;
+    if (isVIP) {
+        cout << "VIP过期时间: " << DMG::TimeToDate(time) << "\n是否为年VIP: " << year << endl;
+    }
+    cout << "1) 兑换卡密" << endl;
+    cout << "2) 修改密码" << endl;
+    cout << "0) 返回主界面" << endl;
+    int input;
+    cin >> input;
+    switch (input) {
+    case 1:
+        ExchangeKey();
+        break;
+    case 2:
+        ChangePass();
+        break;
+    default:
+        MainPage();
+        break;
+    }
+}
+
+void ChangePass() {
+    DMG::PrintLogo();
+    string response, oldpass, newpass, temp, keys[64], value[64];
+    keys[0] = "uid";
+    keys[1] = "oldpass";
+    keys[2] = "newpass";
+    cout << "输入旧密码: ";
+    oldpass = DMG::getPassword("*");
+    cout << "输入新密码: ";
+    temp = DMG::getPassword("*");
+    cout << "再次输入新密码: ";
+    newpass = DMG::getPassword("*");
+    if (temp != newpass) {
+        cout << "两次密码输入不一致!" << endl;
+        system("pause");
+        VIPCenter();
+        return;
+    }
+    value[0] = to_string(userid);
+    value[1] = oldpass;
+    value[2] = newpass;
+    http::Post("http://api.dmgclub.cn/changepass.php", DMG::CreateJSON(keys, value, 3), response, 10);
+    Document document;
+    document.Parse(response.data());
+    string status = document["Status"].GetString();
+    if (status != "Success") {
+        cout << "发生错误! " << status << endl;
+    }
+    else {
+        cout << "更改成功!" << endl;
+        isLogin = false;
+        isVIP = false;
+        userid = 0;
+    }
+    system("pause");
+    MainPage();
+}
+
+void ExchangeKey() {
+    DMG::PrintLogo();
+    string key, response, url, status;
+    cout << "输入卡密: ";
+    cin >> key;
+    string keys[64], value[64];
+    keys[0] = "uid";
+    keys[1] = "key";
+    value[0] = to_string(userid);
+    value[1] = key;
+    http::Post("http://api.dmgclub.cn/key.php", DMG::CreateJSON(keys, value, 2), response, 10);
+    Document document;
+    document.Parse(response.data());
+    status = document["Status"].GetString();
+    if (status == "Success") {
+        cout << "兑换成功! 卡密天数: " << document["Days"].GetInt() << endl;
+    }
+    else {
+        cout << "兑换失败" << endl;
+    }
+    system("pause");
+    VIPCenter();
+}
+
+void Login() {
+    if (isLogin) {
+        isLogin = false;
+        isVIP = false;
+        userid = 0;
+        MainPage();
+        return;
+    }
+    DMG::PrintLogo();
+    string user, pass, url, base64, response, sql;
+    cout << "输入用户名: ";
+    cin >> user;
+    cout << "输入密码: ";
+    pass = DMG::getPassword("*");
+    string keys[64], value[64];
+    keys[0] = "user";
+    keys[1] = "pass";
+    value[0] = user;
+    value[1] = pass;
+    http::Post("http://api.dmgclub.cn/check.php", DMG::CreateJSON(keys, value, 2), response, 10);
+    Document document;
+    document.Parse(response.data());
+    string status = document["Status"].GetString();
+    if (status == "Success") {
+        userid = atoi(document["uid"].GetString());
+        isLogin = true;
+        cout << "登录成功! 欢迎回来, " << DMG::GetNickName(userid) << endl;
+    }
+    else {
+        cout << "用户名或密码错误!" << endl;
+    }
+    system("pause");
+    MainPage();
 }
 
 void FastJoin() {
-	system("cls");
-	PrintLogo();
-    string info, temp, url;
-    http::HttpGet("http://api.dmgclub.cn/server.php?sid=1", info, 10);
-    int count = GetCount(info);
+	DMG::PrintLogo();
+    string info;
+    http::Get("http://api.dmgclub.cn/server.php?count", info, 10);
+    int count = DMG::GetCount(info);
+    string keys[64], value[64];
     cout << "当前服务器数量: " << count << endl;
+    keys[0] = "sid";
     for (int i = 1; i <= count; i++) {
         info = "";
-        url = "";
-        url = format("http://api.dmgclub.cn/server.php?sid=%i", i);
-        http::HttpGet(url, info, 10);
-        cout << i << ") " << GetHostName(info) << " " << GetPlayers(info) << "/" << GetMaxPlayers(info) << " | 地图: " << GetMap(info) << endl;
+        value[0] = to_string(i);
+        http::Post("http://api.dmgclub.cn/server.php", DMG::CreateJSON(keys, value, 1), info, 10);
+        cout << i << ") " << DMG::GetHostName(info) << " " << DMG::GetPlayers(info) << "/" << DMG::GetMaxPlayers(info) << " | 地图: " << DMG::GetMap(info) << endl;
     }
     cout << "0) 返回主界面" << endl;
     cout << "输入你想加入服务器的序号: ";
@@ -217,36 +284,10 @@ void FastJoin() {
 }
 
 void JoinGame(int sid) {
-    string response, url;
-    url = format("http://api.dmgclub.cn/server.php?sid=%i", sid);
-    http::HttpGet(url, response, 10);
-    string IP = GetIP(response);
-    int port = GetPort(response);
-    url = format("start steam://connect/%s:%i", IP, port);
-    const char* cmd = url.data();
-    system(cmd);
-    return;
-}
-
-void Delay(int time) {
-	clock_t now = clock();
-	while (clock() - now < time);
-}
-
-void PrintLogo() {
-    /*
-     ____  __  __  ____
-    |  _ \|  \/  |/ ___|
-    | | | | |\/| | |  _
-    | |_| | |  | | |_| |
-    |____/|_|  |_|\____|
-    */
-	string logo[5];
-	string border = "***========================***\n";
-	logo[0] = "      ____  __  __  ____\n";
-	logo[1] = "*    |  _ \\|  \\/  |/ ___|    *\n";
-	logo[2] = "*    | | | | |\\/| | |  _     *\n";
-	logo[3] = "*    | |_| | |  | | |_| |    *\n";
-	logo[4] = "*    |____/|_|  |_|\\____|    *\n\n";
-	cout << border << logo[0] << logo[1] << logo[2] << logo[3] << logo[4] << border << endl;
+    string response, url, keys[64], value[64];
+    keys[0] = "sid";
+    value[0] = to_string(sid);
+    http::Post("http://api.dmgclub.cn/server.php", DMG::CreateJSON(keys, value, 1), response, 10);
+    url = DMG::format("start steam://connect/%s:%i", DMG::GetIP(response), DMG::GetPort(response));
+    system(url.data());
 }
