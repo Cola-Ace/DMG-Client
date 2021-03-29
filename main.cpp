@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 #include <ctime>
+#include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <fstream>
@@ -60,6 +61,9 @@ void Login();
 void VIPCenter();
 void ChangePass();
 void ExchangeKey();
+void ChangeName();
+void Stats();
+void Players(int);
 void JoinGame(int);
 
 //Get Client Info
@@ -83,15 +87,16 @@ void MainPage() {
     }
 	cout << "欢迎使用DMG社区启动器！" << endl;
 	cout << "1) 快速加入服务器" << endl;
+    cout << "2) 战绩统计" << endl;
     if (isLogin) {
-        cout << "2) 退出登录" << endl;
-        cout << "3) 用户中心" << endl;
+        cout << "3) 退出登录" << endl;
+        cout << "4) 用户中心" << endl;
     }
     else {
-        cout << "2) 登录" << endl;
+        cout << "3) 登录" << endl;
     }
 	cout << "0) 退出" << endl;
-	cout << "输入你的选择: ";
+	cout << "输入操作序号: ";
 	int input;
 	cin >> input;
     switch (input) {
@@ -99,14 +104,18 @@ void MainPage() {
         FastJoin();
         break;
     case 2:
-        Login();
+        Stats();
         break;
     case 3:
+        Login();
+        break;
+    case 4:
         if (isLogin) {
             VIPCenter();
         }
         break;
     }
+    return;
 }
 
 void VIPCenter() {
@@ -140,7 +149,9 @@ void VIPCenter() {
     }
     cout << "1) 兑换卡密" << endl;
     cout << "2) 修改密码" << endl;
+    cout << "3) 修改名字" << endl;
     cout << "0) 返回主界面" << endl;
+    cout << "输入操作序号: ";
     int input;
     cin >> input;
     switch (input) {
@@ -150,10 +161,59 @@ void VIPCenter() {
     case 2:
         ChangePass();
         break;
+    case 3:
+        ChangeName();
+        break;
     default:
         MainPage();
         break;
     }
+    return;
+}
+
+void Stats() {
+    DMG::PrintLogo();
+}
+
+void ChangeName() {
+    DMG::PrintLogo();
+    string response, keys[64], value[64];
+    keys[0] = "uid";
+    value[0] = to_string(userid);
+    http::Post("http://api.dmgclub.cn/user.php", DMG::CreateJSON(keys, value, 1), response, 10);
+    Document document;
+    document.Parse(response.data());
+    long long temp = document["Renaming_Time"].GetInt();
+    if (temp != 0) {
+        time_t last_renaming = temp;
+        time_t renaming_time = temp + 2592000;
+        time_t nowtime = time(NULL);
+        cout << "上次改名时间: " << DMG::TimeToDate(last_renaming) << endl;
+        cout << "当前时间: " << DMG::TimeToDate(nowtime) << endl;
+        if (renaming_time > nowtime) {
+            cout << "距离上次改名未超过30天, 无法改名! " << endl;
+        }
+    }
+    else {
+        cout << "你还没改过名字呢" << endl;
+        string newname, temp1;
+        cout << "输入新名称: ";
+        cin >> newname;
+        cout << "确定要改成 " << newname << " 吗? 输入 yes 确定, 输入 no 取消改名: ";
+        cin >> temp1;
+        if (temp1 == "yes") {
+            keys[1] = "name";
+            value[1] = newname;
+            http::Post("http://api.dmgclub.cn/changename.php", DMG::CreateJSON(keys, value, 2), response, 10);
+            cout << "改名成功! 你的新名字为 " << newname << endl;
+        }
+        else {
+            cout << "你已经取消改名" << endl;
+        }
+    }
+    system("pause");
+    MainPage();
+    return;
 }
 
 void ChangePass() {
@@ -192,6 +252,7 @@ void ChangePass() {
     }
     system("pause");
     MainPage();
+    return;
 }
 
 void ExchangeKey() {
@@ -216,6 +277,7 @@ void ExchangeKey() {
     }
     system("pause");
     VIPCenter();
+    return;
 }
 
 void Login() {
@@ -251,24 +313,19 @@ void Login() {
     }
     system("pause");
     MainPage();
+    return;
 }
 
 void FastJoin() {
 	DMG::PrintLogo();
-    string info;
-    http::Get("http://api.dmgclub.cn/server.php?count", info, 10);
+    string info = DMG::GetServerInfo();
     int count = DMG::GetCount(info);
-    string keys[64], value[64];
     cout << "当前服务器数量: " << count << endl;
-    keys[0] = "sid";
-    for (int i = 1; i <= count; i++) {
-        info = "";
-        value[0] = to_string(i);
-        http::Post("http://api.dmgclub.cn/server.php", DMG::CreateJSON(keys, value, 1), info, 10);
-        cout << i << ") " << DMG::GetHostName(info) << " " << DMG::GetPlayers(info) << "/" << DMG::GetMaxPlayers(info) << " | 地图: " << DMG::GetMap(info) << endl;
+    for (int i = 0; i < count; i++) {
+        cout << i << ") " << DMG::GetHostName(info, i) << " " << DMG::GetPlayers(info, i) << "/" << DMG::GetMaxPlayers(info, i) << " | 地图: " << DMG::GetMap(info, i) << endl;
     }
     cout << "0) 返回主界面" << endl;
-    cout << "输入你想加入服务器的序号: ";
+    cout << "输入序号查看服务器详细信息: ";
     int input;
     cin >> input;
     if (input > count || input == 0) {
@@ -276,18 +333,47 @@ void FastJoin() {
     }
     for (int i = 1; i <= count; i++) {
         if (input == i) {
-            JoinGame(i);
+            Players(i);
             break;
         }
     }
-    MainPage();
+    return;
 }
 
-void JoinGame(int sid) {
+void Players(int sid) {
+    DMG::PrintLogo();
     string response, url, keys[64], value[64];
     keys[0] = "sid";
     value[0] = to_string(sid);
-    http::Post("http://api.dmgclub.cn/server.php", DMG::CreateJSON(keys, value, 1), response, 10);
-    url = DMG::format("start steam://connect/%s:%i", DMG::GetIP(response), DMG::GetPort(response));
+    http::Post("http://api.dmgclub.cn/players.php", DMG::CreateJSON(keys, value, 1), response, 10);
+    Document document;
+    document.Parse(response.data());
+    int count = document["Count"].GetInt();
+    cout << "当前服务器共有 " << count << " 名玩家" << endl;
+    if (count > 0) {
+        for (int i = 0; i < count; i++) {
+            cout << DMG::UTF8ToGBK(document["Players"][i]["Name"].GetString()) << " 得分:" << document["Players"][i]["Frags"].GetInt() << " 时长:" << document["Players"][i]["TimeF"].GetString() << endl;
+        }
+    }
+    cout << "输入 1 加入该服务器, 输入其他返回服务器列表: ";
+    int input;
+    cin >> input;
+    switch (input) {
+    case 1:
+        JoinGame(sid);
+        MainPage();
+        break;
+    default:
+        FastJoin();
+        break;
+    }
+    return;
+}
+
+void JoinGame(int index) {
+    string response, url;
+    response = DMG::GetServerInfo();
+    url = DMG::format("start steam://connect/%s:%i", DMG::GetIP(response, index), DMG::GetPort(response, index));
     system(url.data());
+    return;
 }
